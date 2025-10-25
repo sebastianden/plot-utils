@@ -1,31 +1,23 @@
-import numpy as np
+import colorsys
+import matplotlib.colors as mc
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.colors as mc
-import colorsys
 
 
-def rand_data(num_classes,num_samples,std):
-    # Create a placeholder vector
-    data = np.empty((0,num_samples))
-    # Create num_classes samples
-    for i in range(num_classes):
-        # Choose mean by quadratic function
-        x = i-(num_classes*0.5)+0.5
-        # Create one sample with std and num_samples points
-        sample=np.random.normal(loc=-0.5*x*x,scale=std,size=(1,num_samples))
-        # Append to placeholder
-        data = np.append(data,sample,axis=0)
-    # Transpose (for seaborne visualisation)
-    data = data.T
-    # Save as pandas dataframe
-    df = pd.DataFrame(data)
-    return df
+def lighten_color(
+    color: str | tuple, amount: float = 0.5
+) -> tuple[float, float, float]:
+    """
+     Lightens the given color by multiplying (1-luminosity) by the given amount.
 
+    Args:
+        color (str or tuple): Matplotlib color string, hex string, or RGB tuple.
+        amount (float): Factor by which to lighten the color. 0 returns black, 1 returns the original color.
 
-# Take a RGB color and lighten it by a given factor
-def lighten_color(color, amount=0.5):
+    Returns:
+        tuple: Lightened RGB color tuple.
+    """
     try:
         c = mc.cnames[color]
     except:
@@ -36,39 +28,59 @@ def lighten_color(color, amount=0.5):
     return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
 
 
-if __name__ == "__main__":
-    
-    data = rand_data(30,100,3)  # Create random data in shape of a rainbow
+def rainbow_boxplot(data: pd.DataFrame, filename: str, dpi: int = 300):
+    """
+    Creates a rainbow-colored boxplot from the given data.
+
+    Args:
+        data (DataFrame): Pandas DataFrame containing the data to plot.
+        filename (str): The filename to save the plot to.
+        dpi (int): The resolution in dots per inch for the saved figure.
+    """
 
     # Define outlier properties
-    flierprops = dict(marker='o', markersize=3)
+    flierprops = dict(marker="o", markersize=3)
     # Set the style to only horizontal lines
     sns.set_style("whitegrid")
     # Set up the figure
-    fig, ax = plt.subplots(figsize=(12,6))
+    fig, ax = plt.subplots(figsize=(12, 6))
     # Delete the frame of the figure
-    sns.despine(left=True,ax=ax)
+    sns.despine(left=True, ax=ax)
 
     sns.boxplot(palette="husl", data=data, saturation=1, flierprops=flierprops, ax=ax)
 
-    for i,artist in enumerate(ax.artists):
-        # Get the fill color
-        col_edge = lighten_color(artist.get_facecolor(), 1.0)
+    # Prefer patches (Rectangle boxes). If empty, fall back to artists for older Matplotlib versions.
+    containers = ax.patches if len(ax.patches) else ax.artists
+
+    for i, artist in enumerate(containers):
+        # Get the fill color (use only RGB part if RGBA is returned)
+        face = artist.get_facecolor()
+        if hasattr(face, "__len__") and len(face) >= 3:
+            face_rgb = tuple(face[:3])
+        else:
+            face_rgb = face
+
+        col_edge = lighten_color(face_rgb, 1.0)
         # Set edge color to the fill color
         artist.set_edgecolor(col_edge)
-        # Lighten the fill color by a faktor of 0.5 and set it
-        col_face = lighten_color(artist.get_facecolor(), 0.5)
+        # Set edge linewidth for the box/patch
+        try:
+            artist.set_linewidth(1.5)
+        except Exception:
+            # Not all artist types expose set_linewidth; ignore if unavailable
+            pass
+
+        # Lighten the fill color by a factor of 0.5 and set it
+        col_face = lighten_color(face_rgb, 0.5)
         artist.set_facecolor(col_face)
-        #artist.set_facecolor((1,1,1))  # delete fill
 
         # Each box has 6 associated Line2D objects (to make the whiskers, fliers, etc.)
         # Loop over them here, and use the same colour as above
-        for j in range(i*6,i*6+6):
+        for j in range(i * 6, i * 6 + 6):
             line = ax.lines[j]
             line.set_color(col_edge)
             line.set_mfc(col_edge)
             line.set_mec(col_edge)
             line.set_linewidth(1.5)
-    plt.savefig("rainbow.png", dpi=300)
-    plt.show()
 
+    plt.savefig(filename, dpi=dpi)

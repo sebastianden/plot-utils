@@ -1,45 +1,3 @@
-# plot-utils
-
-Utility functions for creating special plots.
-
-## GPS-Plot
-
-Plot a map from one or more `.gpx` files using `gpxpy` and `tilemapbase`.
-
-### Example
-
-Code:
-
-```python
-from gps_plot import gps_plot, load_gps_data
-
-paths = [
-    "./gpx/activity_1.gpx",
-    "./gpx/activity_2.gpx",
-    "./gpx/activity_3.gpx"
-]
-
-coordinates = load_gps_data(paths)
-
-gps_plot(coordinates, "./img/gps_plot.png")
-```
-
-Result:
-
-<p align="center">
-  <img src="img/gps_plot.png" width="50%" />
-</p>
-
-
-## Rainbow Boxplot
-
-Make a custom boxplot in rainbow color scheme.
-
-### Example
-
-Code:
-
-```python
 import numpy as np
 import pandas as pd
 from rainbow_boxplot import rainbow_boxplot
@@ -67,10 +25,3 @@ if __name__ == "__main__":
 
     data = rand_data(30, 100, 3)  # Create random data in shape of a rainbow
     rainbow_boxplot(data, "./img/rainbow_boxplot.png")  # Create rainbow boxplot
-```
-
-Result:
-
-<p align="center">
-  <img src="img/rainbow_boxplot.png" width="80%" />
-</p>
